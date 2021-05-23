@@ -13,7 +13,14 @@ import matplotlib.animation as animation
 import os
 import subprocess
 import time
+from matplotlib import style
+import numpy as np
 
+f = open("parameter.txt")
+paraindex = f.read().splitlines()
+
+#print(paraindex[0])
+#print(" "+ paraindex[1])
 
 # Function for opening the  
 # file explorer window 
@@ -54,7 +61,7 @@ def browseFiles3():
     b_13.configure(text="File Path: "+filename)
 
 
-def executeCpp(): 
+def executeC(): 
   
     # create a pipe to a child process 
     data, temp = os.pipe() 
@@ -65,16 +72,18 @@ def executeCpp():
     os.close(temp) 
   
     # store output of the program as a byte string in s 
-    s = subprocess.check_output("g++ test.cpp -o out2;./out2", stdin = data, shell = True) 
-  
+    #s = subprocess.check_output("g++ test.cpp -o out2;./out2", stdin = data, shell = True) 
+    ##os.system("g++ test.cpp -o out2;./out2 &")
+    s = subprocess.check_call("./out2", stdin = data, shell = True) 
+
     # decode s to a normal string 
-    print(s.decode("utf-8")) 
+    #print(s.decode("utf-8")) 
 
 def plot(): 
-    #executeCpp()
-
-    fig = plt.figure()
-    ax1 = fig.add_subplot(1,1,1)
+    executeC()
+    style.use("ggplot")
+    fig = Figure(figsize=(5,5), dpi=100)
+    ax1 = fig.add_subplot(111)
 
     def animate(i):
     
@@ -87,28 +96,17 @@ def plot():
                 x,y = eachLine.split(' ')
                 xar.append(int(x))
                 yar.append(int(y))
-                
+                #ax1.plot(xar,yar, 'r', marker='o')
                 
         #ax1.clear()
         ax1.plot(xar,yar)
+    plotcanvas = FigureCanvasTkAgg(fig, frame2)
+    plotcanvas.get_tk_widget().place(relx=0.05, rely=0.15, relwidth=0.9, relheight=0.8)
     ani = animation.FuncAnimation(fig, animate, interval=1000)
-    plt.show()
-    # creating the Tkinter canvas 
-    # containing the Matplotlib figure 
-    canvas = FigureCanvasTkAgg(fig, 
-                               master = root)   
-    canvas.draw() 
-  
-    # placing the canvas on the Tkinter window 
-    canvas.get_tk_widget().grid(row=5, column=0) 
-  
-    # creating the Matplotlib toolbar 
-    toolbar = NavigationToolbar2Tk(canvas, 
-                                   root) 
-    toolbar.update() 
-  
-    # placing the toolbar on the Tkinter window 
-    canvas.get_tk_widget().grid(row=0 , column=1)
+    #canvas.show()
+
+def stopfoo():
+    os.system("pkill out2")
 
 def button_click():
     return;
@@ -150,10 +148,10 @@ lbl_filename2.place(relx=0.32, rely=0.50, relheight=0.24, relwidth=0.68)
 btn_start = Button(frame1, text="Start", command=plot)
 btn_start.place(rely= 0.75,relwidth=0.3, relheight=0.25)
 
-btn_pause = Button(frame1, text="Pause")
+btn_pause = Button(frame1, text="Pause/Resume")
 btn_pause.place(relx=0.32, rely= 0.75,relwidth=0.23, relheight=0.25)
 
-btn_resume = Button(frame1, text="Pause")
+btn_resume = Button(frame1, text="Stop", command=stopfoo)
 btn_resume.place(relx=0.55, rely= 0.75,relwidth=0.23, relheight=0.25)
 
 btn_runningtime = Button(frame1, text="Time", bitmap = "hourglass")
@@ -175,38 +173,57 @@ btn_para.place(relx=0.05, rely=0.01, relwidth=0.9, relheight=0.1)
 
 #INSERT SLIDER
 def sel1():
-    selection1 = "Value = " + str(var1.get())
+    selection1 = "Value = " + str(inputtxt1.get(1.0, "end-1c"))
     label1.config(text = selection1)
-
+    paraindex[0] = inputtxt1.get(1.0, "end-1c")
+    #print(paraindex[0])
+    
+    
 def sel2():
-    selection2 = "Value = " + str(var2.get())
+    selection2 = "Value = " + str(inputtxt2.get(1.0, "end-1c"))
     label2.config(text = selection2)
+    paraindex[1] = inputtxt2.get(1.0, "end-1c")
 
 def sel3():
-    selection3 = "Value = " + str(var3.get())
+    selection3 = "Value = " + str(inputtxt3.get(1.0, "end-1c"))
     label3.config(text = selection3)
 
+def sel6():
+
+    a_file = open("parameter.txt", "w")
+
+    #for row in paraindex:
+    #    np.savetxt(a_file, row)
+
+    np.savetxt("parameter.txt", np.array([paraindex[0], paraindex[1]]), fmt="%s")
+    a_file.close()
+
+    #n=2
+    #for i in range(n):
+    #    np.savetxt("parameter.txt", np.array(paraindex[i], fmt="%s"))
+    #a_file.close()
 
 var1 = DoubleVar()
-scale = Scale( frame3, variable = var1 )
-scale.place(relx=0.05,rely=0.14, anchor = 'nw')
+inputtxt1 = Text(frame3,height = 2,width = 15)
+inputtxt1.place(relx=0.05,rely=0.14, relwidth=0.3, relheight=0.1, anchor = 'nw')
 
-button = Button(frame3, text = "Parameter 1", command = sel1)
-button.place(relx=0.95, rely=0.14, relwidth=0.7, relheight=0.1, anchor = 'ne')
+
+button = Button(frame3, text = "Depth", command = sel1)
+button.place(relx=0.37, rely=0.14, relwidth=0.3, relheight=0.1, anchor = 'nw')
 
 
 label1 = Label(frame3, bg='#74BDCB')
-label1.place(relx=0.95, rely=0.38, relwidth=0.7,relheight=0.1, anchor='se')
+label1.place(relx=0.95, rely=0.14, relwidth=0.27,relheight=0.1, anchor='ne')
 
 var2 = DoubleVar()
-scale = Scale(frame3, variable = var2 )
-scale.place(relx=0.05,rely=0.41, anchor = 'nw')
+inputtxt2 = Text(frame3,height = 2,width = 15)
+inputtxt2.place(relx=0.05,rely=0.29, relwidth=0.3, relheight=0.1, anchor = 'nw')
 
-button = Button(frame3, text = "Parameter 2", command = sel2)
-button.place(relx=0.95, rely=0.41, relwidth=0.7, relheight=0.1, anchor = 'ne')
+button = Button(frame3, text = "Time", command = sel2)
+button.place(relx=0.37, rely=0.29, relwidth=0.3, relheight=0.1, anchor = 'nw')
 
 label2 = Label(frame3, bg='#74BDCB')
-label2.place(relx=0.95, rely=0.65, relwidth=0.7,relheight=0.1, anchor='se')
+label2.place(relx=0.95, rely=0.29, relwidth=0.27,relheight=0.1, anchor='ne')
 
 #lbl_parameter3 = Label(frame3, text = "Parameter 3")
 #lbl_parameter3.place(relx=0.95, rely=0.82, relwidth=0.7, relheight=0.1, anchor = 'ne')
@@ -215,34 +232,47 @@ label2.place(relx=0.95, rely=0.65, relwidth=0.7,relheight=0.1, anchor='se')
 #spinbox1.place(relx=0.95, rely=0.93, relwidth=0.7,anchor='ne')
 
 var3 = DoubleVar()
-scale = Scale(frame3, variable = var3 )
-scale.place(relx=0.05,rely=0.68, anchor = 'nw')
+inputtxt3 = Text(frame3,height = 2,width = 15)
+inputtxt3.place(relx=0.05,rely=0.44, relwidth=0.3, relheight=0.1, anchor = 'nw')
 
-button = Button(frame3, text = "Parameter 3", command = sel3)
-button.place(relx=0.95, rely=0.68, relwidth=0.7, relheight=0.1, anchor = 'ne')
+button = Button(frame3, text = "Frequency", command = sel3)
+button.place(relx=0.37, rely=0.44, relwidth=0.3, relheight=0.1, anchor = 'nw')
 
-label2 = Label(frame3, bg='#74BDCB')
-label2.place(relx=0.95, rely=0.92, relwidth=0.7,relheight=0.1, anchor='se')
+label3 = Label(frame3, bg='#74BDCB')
+label3.place(relx=0.95, rely=0.44, relwidth=0.27,relheight=0.1, anchor='ne')
 
-#INSERT RADIOBUTTONS
-def sel():
-   selection = "You selected the option " + str(var.get())
-   label.config(text = selection)
+var4 = DoubleVar()
+inputtxt3 = Text(frame3,height = 2,width = 15)
+inputtxt3.place(relx=0.05,rely=0.59, relwidth=0.3, relheight=0.1, anchor = 'nw')
 
-var = IntVar()
-R1 = Radiobutton(frame3, text = "Option 1", variable = var, value = 1,
-                  command = sel)
-R1.place(anchor = 'nw',relx=0.05, rely=0.94)
+button = Button(frame3, text = "# Iterations", command = sel3)
+button.place(relx=0.37, rely=0.59, relwidth=0.3, relheight=0.1, anchor = 'nw')
 
-R2 = Radiobutton(frame3, text = "Option 2", variable = var, value = 2,
-                  command = sel)
-R2.place(anchor = 'nw', relx=0.37, rely=0.94)
+label3 = Label(frame3, bg='#74BDCB')
+label3.place(relx=0.95, rely=0.59, relwidth=0.27,relheight=0.1, anchor='ne')
 
-R3 = Radiobutton(frame3, text = "Option 3", variable = var, value = 3,
-                  command = sel)
-R3.place( anchor = 'nw', relx=0.69, rely=0.94)
+var5 = DoubleVar()
+inputtxt3 = Text(frame3,height = 2,width = 15)
+inputtxt3.place(relx=0.05,rely=0.74, relwidth=0.3, relheight=0.1, anchor = 'nw')
 
-label = Label(root)
-label.pack()
+button = Button(frame3, text = "Para 5", command = sel3)
+button.place(relx=0.37, rely=0.74, relwidth=0.3, relheight=0.1, anchor = 'nw')
+
+label3 = Label(frame3, bg='#74BDCB')
+label3.place(relx=0.95, rely=0.74, relwidth=0.27,relheight=0.1, anchor='ne')
+
+var6 = DoubleVar()
+inputtxt3 = Text(frame3,height = 2,width = 15)
+inputtxt3.place(relx=0.05,rely=0.89, relwidth=0.3, relheight=0.1, anchor = 'nw')
+
+button = Button(frame3, text = "Save all para", command = sel6)
+button.place(relx=0.37, rely=0.89, relwidth=0.3, relheight=0.1, anchor = 'nw')
+
+label3 = Label(frame3, bg='#74BDCB')
+label3.place(relx=0.95, rely=0.89, relwidth=0.27,relheight=0.1, anchor='ne')
+
+#print(paraindex[0])
+#f.write()
+
 
 root.mainloop()
